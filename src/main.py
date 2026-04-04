@@ -1,11 +1,14 @@
 import os
 from datetime import datetime, timezone
+from typing import Annotated
 
 import google.genai as genai
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
+
+from auth import check_rate_limit
 
 load_dotenv()
 
@@ -38,7 +41,10 @@ def health():
 
 
 @app.post("/api/search", response_model=SearchResponse)
-async def search_person(request: SearchRequest):
+async def search_person(
+    request: SearchRequest,
+    _: Annotated[str, Depends(check_rate_limit)],
+):
     name = request.name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="name must not be empty")
